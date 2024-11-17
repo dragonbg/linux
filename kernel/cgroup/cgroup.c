@@ -5796,11 +5796,14 @@ static bool cgroup_check_hierarchy_limits(struct cgroup *parent)
 	for (cgroup = parent; cgroup; cgroup = cgroup_parent(cgroup)) {
 		if (cgroup->nr_descendants >= cgroup->max_descendants)
 			goto fail;
+		
+// Ensure level does not exceed cgroup->max_depth to prevent hierarchy overflow.
+// Using '>=' to correctly handle edge cases where level == max_depth.
 
-		if (level >= cgroup->max_depth)
-			goto fail;
-
-		level++;
+		if (level >= cgroup->max_depth) {
+    pr_err("cgroup: Failed to create child cgroup. Current level (%d) exceeds max depth (%d)\n",
+           level, cgroup->max_depth);
+    return -EOVERFLOW;
 	}
 
 	ret = true;
