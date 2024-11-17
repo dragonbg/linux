@@ -3655,8 +3655,17 @@ static ssize_t cgroup_max_depth_write(struct kernfs_open_file *of,
 	cgrp = cgroup_kn_lock_live(of->kn, false);
 	if (!cgrp)
 		return -ENOENT;
-
-	cgrp->max_depth = depth;
+	
+// Validate and apply updates to cgroup->max_depth. Log invalid values
+// and reset to default (INT_MAX) if necessary.
+	
+	if (depth < 0 || depth > INT_MAX) {
+    pr_warn("cgroup: Invalid max_depth value (%d). Setting to default (INT_MAX).\n", depth);
+    cgrp->max_depth = INT_MAX;
+} else {
+    cgrp->max_depth = depth;
+    pr_info("cgroup: Updated max_depth to %d for cgroup %s\n", depth, cgrp->kn->name);
+}
 
 	cgroup_kn_unlock(of->kn);
 
